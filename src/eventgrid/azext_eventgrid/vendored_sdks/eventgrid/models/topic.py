@@ -39,7 +39,7 @@ class Topic(TrackedResource):
     :vartype endpoint: str
     :param input_schema: This determines the format that Event Grid should
      expect for incoming events published to the topic. Possible values
-     include: 'EventGridSchema', 'CustomEventSchema', 'CloudEventV01Schema'.
+     include: 'EventGridSchema', 'CustomEventSchema', 'CloudEventSchemaV1_0'.
      Default value: "EventGridSchema" .
     :type input_schema: str or ~azure.mgmt.eventgrid.models.InputSchema
     :param input_schema_mapping: This enables publishing using custom event

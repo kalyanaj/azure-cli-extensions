@@ -926,6 +926,63 @@ class EventGridTests(ScenarioTest):
         self.cmd('az eventgrid event-subscription delete  --source-resource-id {scope} --name {event_subscription_name2}')
         self.cmd('az eventgrid event-subscription delete  --source-resource-id {scope} --name {event_subscription_name3}')
 
+
+    @ResourceGroupPreparer()
+    def test_create_event_subscriptions_with_20200101_features(self, resource_group):
+        event_subscription_name1 = 'CliTestEventsubscription1'
+        event_subscription_name2 = 'CliTestEventsubscription2'
+        event_subscription_name3 = 'CliTestEventsubscription3'
+        servicebustopic_endpoint_id = '/subscriptions/5b4b650e-28b9-4790-b3ab-ddbd88d727c4/resourceGroups/DevExpRg/providers/Microsoft.ServiceBus/namespaces/devexpservicebus/topics/devexptopic1'
+        azurefunction_endpoint_id_cloudevent = '/subscriptions/5b4b650e-28b9-4790-b3ab-ddbd88d727c4/resourceGroups/DevExpRg/providers/Microsoft.Web/sites/eventgridclitestapp/functions/cloudeventfunc'
+        azurefunction_endpoint_id_eventgridevent = '/subscriptions/5b4b650e-28b9-4790-b3ab-ddbd88d727c4/resourceGroups/DevExpRg/providers/Microsoft.Web/sites/eventgridclitestapp/functions/eventgrideventfunc'
+
+        scope = self.cmd('az group show -n {} -ojson'.format(resource_group)).get_output_in_json()['id']
+
+        self.kwargs.update({
+            'event_subscription_name1': event_subscription_name1,
+            'event_subscription_name2': event_subscription_name2,
+            'event_subscription_name3': event_subscription_name3,
+            'servicebustopic_endpoint_id': servicebustopic_endpoint_id,
+            'azurefunction_endpoint_id_cloudevent': azurefunction_endpoint_id_cloudevent,
+            'azurefunction_endpoint_id_eventgridevent': azurefunction_endpoint_id_eventgridevent,
+            'scope': scope
+        })
+
+        # Create a servicebustopic destination based event subscription with CloudEvent 1.0 as the delivery schema
+        self.cmd('az eventgrid event-subscription create --source-resource-id {scope} --name {event_subscription_name1} --endpoint-type SErvIcEBusTOPic --endpoint {servicebustopic_endpoint_id} --subject-begins-with SomeRandomText1 --event-delivery-schema CloudEVENTSchemaV1_0')
+
+        # Create an AzureFunction destination based event subscription with CloudEvent 1.0 as the delivery schema and additional batching parameters
+        self.cmd('az eventgrid event-subscription create --source-resource-id {scope} --name {event_subscription_name2} --endpoint-type azUREFunction --endpoint {azurefunction_endpoint_id_cloudevent} --subject-begins-with SomeRandomText1 --event-delivery-schema CloudEVENTSchemaV1_0 --max-events-per-batch 10 --preferred-batch-size-in-kilobytes 128')
+
+        # Create a webhook destination based event subscription with default delivery schema and AzureADApplicationObjectID
+        # TODO Specify an AAD application object ID
+        self.cmd('az eventgrid event-subscription create --source-resource-id {scope} --name {event_subscription_name3} --endpoint {azurefunction_endpoint_id_eventgridevent} --azure_active_directory_application_object_id value')
+
+        self.cmd('az eventgrid event-subscription show  --source-resource-id {scope} --name {event_subscription_name1}', checks=[
+            self.check('type', 'Microsoft.EventGrid/eventSubscriptions'),
+            self.check('provisioningState', 'Succeeded'),
+        ])
+
+        self.cmd('az eventgrid event-subscription show  --source-resource-id {scope} --name {event_subscription_name2}', checks=[
+            self.check('type', 'Microsoft.EventGrid/eventSubscriptions'),
+            self.check('provisioningState', 'Succeeded'),
+        ])
+
+        self.cmd('az eventgrid event-subscription show  --source-resource-id {scope} --name {event_subscription_name3}', checks=[
+            self.check('type', 'Microsoft.EventGrid/eventSubscriptions'),
+            self.check('provisioningState', 'Succeeded'),
+        ])
+
+        self.cmd('az eventgrid event-subscription list --topic-type Microsoft.Resources.ResourceGroups --location global', checks=[
+            self.check('[0].type', 'Microsoft.EventGrid/eventSubscriptions'),
+            self.check('[0].provisioningState', 'Succeeded'),
+        ])
+
+        self.cmd('az eventgrid event-subscription delete  --source-resource-id {scope} --name {event_subscription_name1}')
+        self.cmd('az eventgrid event-subscription delete  --source-resource-id {scope} --name {event_subscription_name2}')
+        self.cmd('az eventgrid event-subscription delete  --source-resource-id {scope} --name {event_subscription_name3}')
+
+
     @ResourceGroupPreparer()
     def test_advanced_filters(self, resource_group):
         endpoint_url = 'https://devexpfuncappdestination.azurewebsites.net/runtime/webhooks/EventGrid?functionName=EventGridTrigger1&code=<HIDDEN>'

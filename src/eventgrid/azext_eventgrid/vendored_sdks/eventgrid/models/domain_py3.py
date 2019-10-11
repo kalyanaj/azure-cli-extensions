@@ -39,7 +39,7 @@ class Domain(TrackedResource):
     :vartype endpoint: str
     :param input_schema: This determines the format that Event Grid should
      expect for incoming events published to the domain. Possible values
-     include: 'EventGridSchema', 'CustomEventSchema', 'CloudEventV01Schema'.
+     include: 'EventGridSchema', 'CustomEventSchema', 'CloudEventSchemaV1_0'.
      Default value: "EventGridSchema" .
     :type input_schema: str or ~azure.mgmt.eventgrid.models.InputSchema
     :param input_schema_mapping: Information about the InputSchemaMapping
